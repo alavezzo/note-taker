@@ -24,7 +24,7 @@ function findById(id, notesArray) {
 function createNewNote(body, notesArray) {
     const note = body;
     notesArray.push(note);
-    return new Promise((resolve, reject) => {
+    new Promise((resolve, reject) => {
         fs.writeFile(path.join(__dirname,'./db/db.json'), JSON.stringify({ notes: notesArray }, null, 2), err => {
             if (err) {
                 reject(err);
@@ -32,11 +32,12 @@ function createNewNote(body, notesArray) {
                 return;
             }
             resolve ({
-                ok: true,
+                ok: true,                   
                 message: 'File created!'
             });
         });
     });
+    return note;
 };
 
 
@@ -56,8 +57,8 @@ app.get('/api/notes/:id', (req, res) => {
 
 app.post('/api/notes', (req, res) => {
     req.body.id = uniqid();
-    createNewNote(req.body, notes)
-    res.json(req.body)
+    const note = createNewNote(req.body, notes);
+    res.json(note);
 })
 
 app.get('/notes', (req, res) => {
