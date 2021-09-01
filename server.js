@@ -16,9 +16,23 @@ app.use(express.static('public'))
 const { notes } = require('./db/db')
 
 
-function findById(id, notesArray) {
-    const result = notesArray.filter(notes => notes.id === id)[0];
-    return result;
+function deleteNote(id, notesArray) {
+    const index = notesArray.findIndex(note => note.id === id);
+    notesArray.splice(index, 1)
+    new Promise((resolve, reject) => {
+        fs.writeFile(path.join(__dirname,'./db/db.json'), JSON.stringify({ notes: notesArray }, null, 2), err => {
+            if (err) {
+                reject(err);
+                console.log(err);
+                return;
+            }
+            resolve ({
+                ok: true,                   
+                message: 'File created!'
+            });
+        });
+    });
+    return index;
 }
 
 function createNewNote(body, notesArray) {
@@ -37,7 +51,6 @@ function createNewNote(body, notesArray) {
             });
         });
     });
-    return note;
 };
 
 
@@ -46,13 +59,9 @@ app.get('/api/notes', (req, res) => {
     res.json(results);
 });
 
-app.get('/api/notes/:id', (req, res) => {
-    const result = findById(req.params.id, notes);
-    if (result) {
-        res.json(result);
-    } else {
-        res.send(404);
-    }
+app.delete('/api/notes/:id', (req, res) => {
+    deleteNote(req.params.id, notes);
+    res.json(notes);
 });
 
 app.post('/api/notes', (req, res) => {
