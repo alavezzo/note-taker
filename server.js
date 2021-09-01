@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const PORT = process.env.PORT || 3001
+const uniqid = require('uniqid')
 
 
 const app = express();
@@ -10,6 +11,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 // parse incoming JSON data
 app.use(express.json());
+app.use(express.static('public'))
 
 const { notes } = require('./db/db')
 
@@ -22,11 +24,11 @@ function findById(id, notesArray) {
 function createNewNote(body, notesArray) {
     const note = body;
     notesArray.push(note);
-    console.log(notesArray);
     return new Promise((resolve, reject) => {
         fs.writeFile(path.join(__dirname,'./db/db.json'), JSON.stringify({ notes: notesArray }, null, 2), err => {
             if (err) {
                 reject(err);
+                console.log(err);
                 return;
             }
             resolve ({
@@ -35,14 +37,8 @@ function createNewNote(body, notesArray) {
             });
         });
     });
-
 };
 
-function validateNote(note) {
-    if (!note.title || typeof note.title !== string) {
-        return false;
-    };
-}
 
 app.get('/api/notes', (req, res) => {
     let results = notes;
@@ -59,15 +55,22 @@ app.get('/api/notes/:id', (req, res) => {
 });
 
 app.post('/api/notes', (req, res) => {
-    req.body.id = notes.length.toString();
-    if (!validateNote(req.body)) {
-        res.status(400).send('The note is not properly formatted.');
-    } else {
-        const note = createNewNote(req.body, notes);
-        res.json(req.body);
-    };
+    req.body.id = uniqid();
+    createNewNote(req.body, notes)
+    res.json(req.body)
 })
+
+app.get('/notes', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/notes.html'))
+});
+
+app.get('*', (req,res) => {
+    res.sendFile(path.join(__dirname, './public/index.html'))
+});
+
+
 
 app.listen(PORT, () => {
     console.log(`API server now on port 3001!`);
 })
+
